@@ -1,0 +1,113 @@
+/* =============================================
+   INDUSTRIAL MANIPULATOR — MAIN STYLESHEET
+   Base: #0f172a | Panel: #1e293b | Border: #334155
+   Accent: #2563eb | Hover: #1d4ed8 | Text: #e2e8f0
+   ============================================= */
+
+/* ---- GLOBAL ---- */
+QMainWindow {
+    background-color: #0f172a;
+}
+
+QWidget {
+    color: #e2e8f0;
+    font-family: "Segoe UI", "Inter", Arial, sans-serif;
+    font-size: 13px;
+}
+
+/* ---- HEADER ---- */
+QWidget#header {
+    background-color: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+QPushButton#burgerButton {
+    background-color: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 20px;
+    border-radius: 4px;
+}
+
+QPushButton#burgerButton:hover {
+    background-color: #334155;
+}
+
+QLabel#headerTitle {
+    background-color: transparent;
+    color: #e2e8f0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ---- SIDEBAR ---- */
+QWidget#sidebar {
+    background-color: #1e293b;
+    border-right: 1px solid #334155;
+}
+
+QPushButton#sidebarItem {
+    background-color: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 14px;
+    text-align: left;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 8px;
+}
+
+QPushButton#sidebarItem:hover {
+    background-color: #334155;
+}
+
+QPushButton#sidebarItem:pressed {
+    background-color: #1e3a8a;
+}
+
+/* ---- CONTENT AREA ---- */
+QWidget#contentArea {
+    background-color: #0f172a;
+}
+
+QWidget#dashboardContainer {
+    background-color: transparent;
+}
+
+/* ---- LOGO ---- */
+QLabel#logoLabel {
+    background-color: transparent;
+}
+
+/* ---- DASHBOARD TITLE ---- */
+QLabel#dashboardTitle {
+    background-color: transparent;
+    color: #e2e8f0;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* ---- PRIMARY BUTTON ---- */
+QPushButton#buttonPrimary {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+QPushButton#buttonPrimary:hover {
+    background-color: #1d4ed8;
+}
+
+QPushButton#buttonPrimary:pressed {
+    background-color: #1e40af;
+}
+
+/* ---- STATUS LABEL ---- */
+QLabel#statusLabel {
+    background-color: transparent;
+    color: #64748b;
+    font-size: 14px;
+}
