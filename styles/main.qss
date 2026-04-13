@@ -21,23 +21,24 @@ QWidget#header {
     border-bottom: 1px solid #334155;
 }
 
-QPushButton#burgerButton {
-    background-color: transparent;
-    border: none;
-    color: #e2e8f0;
-    font-size: 20px;
-    border-radius: 4px;
-}
-
-QPushButton#burgerButton:hover {
-    background-color: #334155;
-}
-
 QLabel#headerTitle {
     background-color: transparent;
     color: #e2e8f0;
     font-size: 14px;
     font-weight: 600;
+}
+
+/* ---- DEVICE BAR ---- */
+QFrame#deviceBar {
+    background-color: rgba(30, 41, 59, 210);
+    border: 1px solid #334155;
+    border-radius: 22px;
+}
+
+QLabel#deviceBarLabel {
+    background-color: transparent;
+    color: #94a3b8;
+    font-size: 12px;
 }
 
 /* ---- SIDEBAR ---- */
@@ -46,23 +47,29 @@ QWidget#sidebar {
     border-right: 1px solid #334155;
 }
 
-QPushButton#sidebarItem {
-    background-color: transparent;
-    border: none;
+/* Sidebar item text label (styled inline in Python; rule kept for fallback) */
+QLabel#sidebarItemText {
+    background: transparent;
     color: #e2e8f0;
     font-size: 14px;
-    text-align: left;
-    padding-left: 12px;
-    padding-right: 12px;
+}
+
+/* ---- SIDEBAR BOTTOM BLOCK ---- */
+QFrame#sidebarBottomBlock {
+    background-color: rgba(15, 23, 42, 160);
+    border: 1px solid #334155;
     border-radius: 8px;
 }
 
-QPushButton#sidebarItem:hover {
-    background-color: #334155;
+/* ---- CAMERA VIEW ---- */
+QWidget#cameraView {
+    background-color: #0f172a;
 }
 
-QPushButton#sidebarItem:pressed {
-    background-color: #1e3a8a;
+QLabel#cameraFeed {
+    background-color: #0f172a;
+    color: #475569;
+    font-size: 16px;
 }
 
 /* ---- CONTENT AREA ---- */
@@ -70,39 +77,8 @@ QWidget#contentArea {
     background-color: #0f172a;
 }
 
-QWidget#dashboardContainer {
+QWidget#dashboardInner {
     background-color: transparent;
-}
-
-/* ---- LOGO ---- */
-QLabel#logoLabel {
-    background-color: transparent;
-}
-
-/* ---- DASHBOARD TITLE ---- */
-QLabel#dashboardTitle {
-    background-color: transparent;
-    color: #e2e8f0;
-    font-size: 20px;
-    font-weight: 600;
-}
-
-/* ---- PRIMARY BUTTON ---- */
-QPushButton#buttonPrimary {
-    background-color: #2563eb;
-    color: #ffffff;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-QPushButton#buttonPrimary:hover {
-    background-color: #1d4ed8;
-}
-
-QPushButton#buttonPrimary:pressed {
-    background-color: #1e40af;
 }
 
 /* ---- STATUS LABEL ---- */
@@ -110,4 +86,110 @@ QLabel#statusLabel {
     background-color: transparent;
     color: #64748b;
     font-size: 14px;
+}
+
+/* ---- HEADER AUTH: user name ---- */
+QLabel#userLabel {
+    background-color: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+/* ---- HEADER AUTH: login button ---- */
+QPushButton#loginBtn {
+    background-color: transparent;
+    border: 1px solid #334155;
+    color: #e2e8f0;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 0 16px;
+    min-height: 32px;
+    max-height: 32px;
+}
+
+QPushButton#loginBtn:hover {
+    background-color: #334155;
+}
+
+/* ---- HEADER AUTH: register button ---- */
+QPushButton#registerBtn {
+    background-color: #2563eb;
+    border: none;
+    color: #ffffff;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 0 16px;
+    min-height: 32px;
+    max-height: 32px;
+}
+
+QPushButton#registerBtn:hover {
+    background-color: #1d4ed8;
+}
+
+/* ---- DIALOGS ---- */
+QDialog {
+    background-color: #1e293b;
+}
+
+QLabel#dialogTitle {
+    background-color: transparent;
+    color: #e2e8f0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+QLabel#formLabel {
+    background-color: transparent;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+QLabel#formErrorLabel {
+    background-color: transparent;
+    color: #ef4444;
+    font-size: 12px;
+}
+
+QLineEdit {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 14px;
+    padding: 0 12px;
+    min-height: 40px;
+    selection-background-color: #2563eb;
+}
+
+QLineEdit:focus {
+    border-color: #2563eb;
+}
+
+QPushButton#dialogSubmitBtn {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    min-height: 44px;
+}
+
+QPushButton#dialogSubmitBtn:hover {
+    background-color: #1d4ed8;
+}
+
+QPushButton#dialogCancelBtn {
+    background-color: transparent;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    border-radius: 8px;
+    font-size: 14px;
+    min-height: 44px;
+}
+
+QPushButton#dialogCancelBtn:hover {
+    background-color: #334155;
+    color: #e2e8f0;
 }
