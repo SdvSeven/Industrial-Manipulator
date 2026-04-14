@@ -1,8 +1,11 @@
-from PySide6.QtWidgets import (
-    QWidget, QHBoxLayout, QPushButton, QLabel, QStyle, QStyleOption,
-)
-from PySide6.QtCore import Qt
+from __future__ import annotations
+
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPainter
+from PySide6.QtWidgets import (
+    QHBoxLayout, QLabel, QMenu, QPushButton,
+    QStyle, QStyleOption, QWidget,
+)
 
 
 class Header(QWidget):
@@ -11,9 +14,15 @@ class Header(QWidget):
     Height: 64 px | Padding: 0 24 px
 
     Layout:
-        LEFT : app title (fixed position)
-        RIGHT: [user_label]  OR  [login_btn]  [reg_btn]
+        LEFT : app title
+        RIGHT: [UserMenuButton]  OR  [login_btn]  [reg_btn]
+
+    Signals
+    -------
+    logout_requested: emitted when user clicks «Выйти» in dropdown
     """
+
+    logout_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -28,19 +37,24 @@ class Header(QWidget):
         self.title_label = QLabel("ИНДУСТРИАЛЬНЫЙ МАНИПУЛЯТОР")
         self.title_label.setObjectName("headerTitle")
         layout.addWidget(self.title_label)
-
         layout.addStretch()
 
-        # ── Right: auth area ───────────────────────────────────
+        # ── Right: authenticated state — dropdown button ───────
+        self._user_menu_btn = QPushButton()
+        self._user_menu_btn.setObjectName("userMenuBtn")
+        self._user_menu_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._user_menu_btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._user_menu_btn.hide()
 
-        # Shown when authenticated
-        self.user_label = QLabel()
-        self.user_label.setObjectName("userLabel")
-        self.user_label.hide()
-        layout.addWidget(self.user_label)
+        _menu = QMenu(self._user_menu_btn)
+        _menu.setObjectName("userDropdownMenu")
+        _logout_action = _menu.addAction("Выйти")
+        _logout_action.triggered.connect(self.logout_requested)
+        self._user_menu_btn.setMenu(_menu)
+        layout.addWidget(self._user_menu_btn)
         layout.addSpacing(16)
 
-        # Shown when NOT authenticated
+        # ── Right: unauthenticated state — login / register ────
         self.login_btn = QPushButton("Вход")
         self.login_btn.setObjectName("loginBtn")
         self.login_btn.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -57,13 +71,13 @@ class Header(QWidget):
     # ── Public API ─────────────────────────────────────────────
 
     def show_user(self, name: str) -> None:
-        self.user_label.setText(name)
-        self.user_label.show()
+        self._user_menu_btn.setText(f"{name}  ▼")
+        self._user_menu_btn.show()
         self.login_btn.hide()
         self.reg_btn.hide()
 
     def show_auth_buttons(self) -> None:
-        self.user_label.hide()
+        self._user_menu_btn.hide()
         self.login_btn.show()
         self.reg_btn.show()
 

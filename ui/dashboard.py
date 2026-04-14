@@ -2,26 +2,37 @@ from __future__ import annotations
 
 from PySide6.QtWidgets import QStackedWidget, QVBoxLayout, QWidget
 
-from components.camera_view import CameraView
 from ui.views.home_view import HomeView
+from ui.views.control_view import ControlView
+from ui.views.settings_view import SettingsView
+from ui.views.logs_view import LogsView
+from services.app_state import AppState
+
+_PAGE_INDEX = {"main": 0, "control": 1, "settings": 2, "logs": 3}
 
 
 class Dashboard(QWidget):
     """
-    Central content area.  Two pages via QStackedWidget:
+    Central content area — QStackedWidget with 4 pages.
 
-      Page 0 — HomeView   : DeviceBar + connect image + status label
-      Page 1 — CameraView : full-area webcam with mediapipe hands
+    Pages
+    -----
+    0 — HomeView     ("main")
+    1 — ControlView  ("control")
+    2 — SettingsView ("settings")
+    3 — LogsView     ("logs")
 
-    Public attributes (delegated from HomeView)
-    -------------------------------------------
-    connect_image : _ClickableImage  — emits clicked()
-    status_label  : QLabel
-    device_bar    : DeviceBar
+    Public attributes
+    -----------------
+    home     : HomeView
+    control  : ControlView
+    settings : SettingsView
+    logs     : LogsView
 
     Public methods
     --------------
-    show_page(name: str)  — "main" | "control"
+    show_page(name: str)   — "main" | "control" | "settings" | "logs"
+    bind_state(AppState)   — wire SettingsView to AppState
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -35,28 +46,38 @@ class Dashboard(QWidget):
         self._stack = QStackedWidget()
         root.addWidget(self._stack)
 
-        # Page 0
-        self._home = HomeView()
-        self._stack.addWidget(self._home)
+        self.home     = HomeView()
+        self.control  = ControlView()
+        self.settings = SettingsView()
+        self.logs     = LogsView()
 
-        # Page 1
-        self._camera_view = CameraView()
-        self._stack.addWidget(self._camera_view)
+        self._stack.addWidget(self.home)      # 0
+        self._stack.addWidget(self.control)   # 1
+        self._stack.addWidget(self.settings)  # 2
+        self._stack.addWidget(self.logs)      # 3
 
         self._stack.setCurrentIndex(0)
-
-        # Delegate public attributes
-        self.connect_image = self._home.connect_image
-        self.status_label = self._home.status_label
-        self.device_bar = self._home.device_bar
+        self._current_page = "main"
 
     # ── Public API ─────────────────────────────────────────────
 
+    def bind_state(self, state: AppState) -> None:
+        self.settings.bind_state(state)
+
     def show_page(self, name: str) -> None:
-        """Switch between pages and manage the camera lifecycle."""
+        idx = _PAGE_INDEX.get(name, 0)
+
+        # Stop camera when leaving control page
+        if self._current_page == "control" and name != "control":
+            self.control.stop_camera()
+
+        self._stack.setCurrentIndex(idx)
+        self._current_page = name
+
+        # Start camera when entering control page
         if name == "control":
-            self._stack.setCurrentIndex(1)
-            self._camera_view.start()
-        else:
-            self._camera_view.stop()
-            self._stack.setCurrentIndex(0)
+            self.control.start_camera()
+
+    @property
+    def current_page(self) -> str:
+        return self._current_page

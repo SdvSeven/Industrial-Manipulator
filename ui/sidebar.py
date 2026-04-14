@@ -1,15 +1,13 @@
 from __future__ import annotations
 import os
 
-from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QFrame, QStyle, QStyleOption,
-)
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QStyle, QStyleOption
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QPainter
 
 from components.sidebar_item import SidebarItem
+from components.sidebar_info import SidebarInfoBlock
 
-# ── Media directory (resolved relative to this file) ──────────
 _MEDIA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "media")
 
 _MENU_ITEMS: list[tuple[str, str]] = [
@@ -19,19 +17,21 @@ _MENU_ITEMS: list[tuple[str, str]] = [
     ("Журнал",     os.path.join(_MEDIA, "logs.png")),
 ]
 
+# Pages that require authentication (§3.2)
+_AUTH_REQUIRED: frozenset[str] = frozenset({"Управление", "Настройки", "Журнал"})
+
 
 class Sidebar(QWidget):
     """
-    Left navigation panel — always visible, never toggleable.
-
-    Width    : 240 px
-    Padding  : 24 px all sides
-    Spacing  : 16 px between items
-    Bottom   : semi-transparent info block (content TBD)
+    Left navigation panel — always visible.
 
     Signals
     -------
-    item_clicked(str): emitted with the menu item label on click.
+    item_clicked(str): menu item label on click.
+
+    Public attributes
+    -----------------
+    info_block: SidebarInfoBlock — real-time state display
     """
 
     item_clicked = Signal(str)
@@ -46,6 +46,7 @@ class Sidebar(QWidget):
         layout.setSpacing(16)
 
         self._items: dict[str, SidebarItem] = {}
+        self._active: str = "Главная"
 
         for name, icon_path in _MENU_ITEMS:
             item = SidebarItem(name, icon_path, self)
@@ -53,26 +54,32 @@ class Sidebar(QWidget):
             self._items[name] = item
             layout.addWidget(item)
 
-        # Default active item
-        self._active: str = "Главная"
         self._items["Главная"].setChecked(True)
 
-        # ── Bottom block ───────────────────────────────────────
         layout.addStretch(1)
 
-        bottom = QFrame(self)
-        bottom.setObjectName("sidebarBottomBlock")
-        bottom.setMinimumHeight(88)
-        layout.addWidget(bottom)
+        # ── SystemInfoBlock ────────────────────────────────────
+        self.info_block = SidebarInfoBlock(self)
+        layout.addWidget(self.info_block)
 
     # ── Public API ─────────────────────────────────────────────
 
     def set_active(self, name: str) -> None:
-        if name in self._items:
-            if self._active and self._active in self._items:
-                self._items[self._active].setChecked(False)
-            self._active = name
-            self._items[name].setChecked(True)
+        if name not in self._items:
+            return
+        if self._active in self._items:
+            self._items[self._active].setChecked(False)
+        self._active = name
+        self._items[name].setChecked(True)
+
+    def set_auth_state(self, is_authenticated: bool) -> None:
+        """Dim lock-required items when not authenticated."""
+        for name in _AUTH_REQUIRED:
+            item = self._items.get(name)
+            if item:
+                item.setProperty("locked", not is_authenticated)
+                item.style().unpolish(item)
+                item.style().polish(item)
 
     @property
     def items(self) -> dict[str, SidebarItem]:
@@ -81,7 +88,6 @@ class Sidebar(QWidget):
     # ── Internal ───────────────────────────────────────────────
 
     def _on_item_clicked(self, name: str) -> None:
-        self.set_active(name)
         self.item_clicked.emit(name)
 
     def paintEvent(self, event) -> None:
