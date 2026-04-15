@@ -3,7 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import (
     QDialog, QHBoxLayout, QMainWindow,
-    QVBoxLayout, QWidget,
+    QMessageBox, QVBoxLayout, QWidget,
 )
 
 from services.app_state import AppState
@@ -112,32 +112,16 @@ class MainWindow(QMainWindow):
         ctrl.speed_changed.connect(self._on_speed_changed)
         ctrl.sensitivity_changed.connect(self._on_sensitivity_changed)
 
-        # CameraWorker signals are wired when camera starts (via ControlView)
-        # We need to tap into the camera_view's worker.
-        # CameraView exposes _worker — instead, we forward through ControlView.
-        # ControlView._cam.camera_view is a CameraView; we wire on start.
-        # To decouple this, we connect to ControlView's internal camera signals
-        # by wrapping CameraView.start/stop in ControlView, which calls worker.
-        # Solution: wire after camera starts via a direct connection on the view.
-        self._wire_camera_signals()
-
-    def _wire_camera_signals(self) -> None:
-        """Wire CameraWorker signals via CameraView inside ControlView."""
+        # BUG#2: connect via CameraView.worker_started signal instead of
+        # monkey-patching start() — avoids duplicate connections on re-start.
         cam_view = self.dashboard.control._cam.camera_view
+        cam_view.worker_started.connect(self._connect_worker_signals)
 
-        # We intercept the worker by monkey-patching CameraView.start
-        # to wire our slots after the worker is created.
-        _original_start = cam_view.start
-
-        def _patched_start():
-            _original_start()
-            w = cam_view._worker
-            if w is not None:
-                w.gesture_detected.connect(self._on_gesture_detected)
-                w.metrics_updated.connect(self._on_metrics_updated)
-                w.error_occurred.connect(self._on_camera_error)
-
-        cam_view.start = _patched_start
+    def _connect_worker_signals(self, worker) -> None:
+        """Wire a freshly created CameraWorker to our slots."""
+        worker.gesture_detected.connect(self._on_gesture_detected)
+        worker.metrics_updated.connect(self._on_metrics_updated)
+        worker.error_occurred.connect(self._on_camera_error)
 
     # ══════════════════════════════════════════════════════════
     # Navigation
@@ -148,10 +132,15 @@ class MainWindow(QMainWindow):
             self._pending_nav = name
             dlg = LoginDialog(self)
             if dlg.exec() == QDialog.DialogCode.Accepted:
-                login, _ = dlg.credentials()
-                self._state.login(login)
+                login, password = dlg.credentials()
+                if not self._state.login(login, password):
+                    self._pending_nav = None
+                    self.sidebar.set_active(
+                        _page_to_nav_name(self.dashboard.current_page)
+                    )
+                    self._show_login_error()
+                    return
                 self.update_auth_ui()
-                # Navigate to originally requested page
                 target = self._pending_nav
                 self._pending_nav = None
                 self._do_navigate(name, target)
@@ -177,18 +166,41 @@ class MainWindow(QMainWindow):
     # ══════════════════════════════════════════════════════════
 
     def _on_login_clicked(self) -> None:
+        if self._state.auth_attempts_left <= 0:
+            QMessageBox.critical(
+                self, "Доступ заблокирован",
+                "Превышено количество попыток входа.\n"
+                "Перезапустите приложение для сброса.",
+            )
+            return
         dlg = LoginDialog(self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
-            login, _ = dlg.credentials()
-            self._state.login(login)
+            login, password = dlg.credentials()
+            if not self._state.login(login, password):
+                self._show_login_error()
+                return
             self.update_auth_ui()
 
     def _on_register_clicked(self) -> None:
         dlg = RegisterDialog(self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
-            name, email = dlg.credentials()
-            self._state.register(name, email)
+            name, email, password = dlg.credentials()
+            self._state.register(name, email, password)
             self.update_auth_ui()
+
+    def _show_login_error(self) -> None:
+        left = self._state.auth_attempts_left
+        if left > 0:
+            QMessageBox.warning(
+                self, "Ошибка входа",
+                f"Неверный логин или пароль.\nОсталось попыток: {left}",
+            )
+        else:
+            QMessageBox.critical(
+                self, "Доступ заблокирован",
+                "Превышено количество попыток входа.\n"
+                "Перезапустите приложение для сброса.",
+            )
 
     def _on_logout(self) -> None:
         # Emergency stop before logout for safety
@@ -226,13 +238,9 @@ class MainWindow(QMainWindow):
     # ══════════════════════════════════════════════════════════
 
     def _on_emergency_stop(self) -> None:
-        # Stop camera immediately (no wait)
-        cam_view = self.dashboard.control._cam.camera_view
-        if cam_view._worker is not None:
-            cam_view._worker.stop()
-            cam_view._worker.deleteLater()
-            cam_view._worker = None
-
+        # BUG#1: delegate to ControlView — avoids direct _worker access and
+        # uses the async stop() pattern (no UI-freeze, no deleteLater race).
+        self.dashboard.control.stop_camera()
         self._state.emergency_stop()
         self.update_system_ui()
         self._push_log_entry_to_view()
@@ -258,12 +266,15 @@ class MainWindow(QMainWindow):
     def _on_gesture_detected(
         self, gesture: str, stability: float, confidence: float
     ) -> None:
+        prev_gesture = self._state.last_gesture
         self._state.on_gesture(gesture, stability, confidence)
         command = self._state.last_command
         self.dashboard.control.update_gesture_display(
             gesture, command, confidence, stability
         )
-        self._push_log_entry_to_view()
+        # BUG#5: only push a log entry when the gesture actually changed
+        if gesture != prev_gesture:
+            self._push_log_entry_to_view()
 
     def _on_metrics_updated(self, fps: float, latency_ms: float) -> None:
         self._state.on_metrics(fps, latency_ms)

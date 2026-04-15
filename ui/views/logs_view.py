@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import csv
-import os
 
-from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox, QDateTimeEdit, QFileDialog, QFrame,
+    QComboBox, QFileDialog,
     QHBoxLayout, QHeaderView, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
@@ -67,9 +66,19 @@ class LogsView(QWidget):
 
     # ── Public API ─────────────────────────────────────────────
 
+    def bind_log_entries(self, entries) -> None:
+        """Share the AppState log deque so there is a single source of truth.
+
+        Call this once from Dashboard.bind_state() before any entries arrive.
+        """
+        self._all_entries = entries
+
     def add_entry(self, entry: dict) -> None:
-        """Add a single log entry and refresh if it passes current filter."""
-        self._all_entries.insert(0, entry)
+        """Notify the view that a new entry was appended to the shared deque.
+
+        The entry is already stored in AppState.log_entries; we only update
+        the table display here.
+        """
         if self._entry_passes_filter(entry):
             self._insert_table_row(0, entry)
 
@@ -165,6 +174,13 @@ class LogsView(QWidget):
 
     # ── CSV export ─────────────────────────────────────────────
 
+    @staticmethod
+    def _sanitize_csv_value(val: str) -> str:
+        """Prefix formula-injection characters to neutralise CSV injection."""
+        if val and val[0] in ("=", "+", "-", "@", "\t", "\r"):
+            return "'" + val
+        return val
+
     def _on_export_csv(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
             self, "Экспорт журнала", "logs_export.csv",
@@ -172,9 +188,16 @@ class LogsView(QWidget):
         )
         if not path:
             return
+        # Enforce .csv extension regardless of what the dialog returned
+        if not path.lower().endswith(".csv"):
+            path += ".csv"
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(
                 f, fieldnames=["time", "gesture", "command", "status"]
             )
             writer.writeheader()
-            writer.writerows(self._all_entries)
+            for entry in self._all_entries:
+                writer.writerow({
+                    k: self._sanitize_csv_value(str(v))
+                    for k, v in entry.items()
+                })

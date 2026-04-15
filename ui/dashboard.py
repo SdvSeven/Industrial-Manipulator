@@ -63,6 +63,8 @@ class Dashboard(QWidget):
 
     def bind_state(self, state: AppState) -> None:
         self.settings.bind_state(state)
+        # BUG#7: share the same deque — eliminates the duplicate copy in LogsView
+        self.logs.bind_log_entries(state.log_entries)
 
     def show_page(self, name: str) -> None:
         idx = _PAGE_INDEX.get(name, 0)

@@ -162,6 +162,10 @@ class RegisterDialog(_BaseAuthDialog):
             return
         self.accept()
 
-    def credentials(self) -> tuple[str, str]:
-        """Return (name, email) for the AppState.register() call."""
-        return self._name_edit.text().strip(), self._email_edit.text().strip()
+    def credentials(self) -> tuple[str, str, str]:
+        """Return (name, email, password) for the AppState.register() call."""
+        return (
+            self._name_edit.text().strip(),
+            self._email_edit.text().strip(),
+            self._pwd_edit.text(),
+        )

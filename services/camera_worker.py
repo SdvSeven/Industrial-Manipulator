@@ -24,7 +24,7 @@ class _GestureTracker:
 
     def update(self, gesture: str) -> float:
         self._history.append(gesture)
-        if not self._history or gesture == "NONE":
+        if gesture == "NONE":
             return 0.0
         count = sum(1 for g in self._history if g == gesture)
         return count / len(self._history)

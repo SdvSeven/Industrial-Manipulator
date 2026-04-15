@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -7,6 +8,8 @@ from datetime import datetime
 from models.user import UserProfile
 from models.system_state import SystemState, ControlMode, StatusIndicator
 from models.device_status import DeviceStatus
+
+_MAX_LOGIN_ATTEMPTS = 3
 
 _DEFAULT_GESTURE_MAP: dict[str, str] = {
     "LEFT":  "MOVE_X -10",
@@ -56,20 +59,49 @@ class AppState:
         default_factory=lambda: deque(maxlen=1000)
     )
 
+    # ── Credential store (login → sha256 hex digest) ──────────
+    _credentials: dict = field(
+        default_factory=dict, init=False, repr=False
+    )
+    _login_attempts: int = field(default=0, init=False, repr=False)
+
     # ══════════════════════════════════════════════════════════
     # Auth methods
     # ══════════════════════════════════════════════════════════
 
-    def login(self, login: str, name: str = "") -> None:
-        self.user = UserProfile(name=name or login, login=login)
-        self.is_authenticated = True
+    def login(self, login: str, password: str) -> bool:
+        """Verify credentials and authenticate.
 
-    def register(self, name: str, email: str) -> None:
+        Returns True on success.  Returns False if credentials are wrong or
+        the account is locked after _MAX_LOGIN_ATTEMPTS consecutive failures.
+        """
+        if self._login_attempts >= _MAX_LOGIN_ATTEMPTS:
+            return False
+        stored = self._credentials.get(login)
+        if stored is None:
+            self._login_attempts += 1
+            return False
+        pw_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        if pw_hash != stored:
+            self._login_attempts += 1
+            return False
+        self._login_attempts = 0
+        self.user = UserProfile(name=login, login=login)
+        self.is_authenticated = True
+        return True
+
+    def register(self, name: str, email: str, password: str) -> None:
+        pw_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
+        self._credentials[email] = pw_hash
         self.user = UserProfile(name=name, email=email, login=email)
         self.is_authenticated = True
 
+    @property
+    def auth_attempts_left(self) -> int:
+        return max(0, _MAX_LOGIN_ATTEMPTS - self._login_attempts)
+
     def logout(self) -> None:
-        self.emergency_stop()
+        # BUG#3: do NOT call emergency_stop() here — MainWindow already does it
         self.user = UserProfile()
         self.is_authenticated = False
 
@@ -126,13 +158,16 @@ class AppState:
 
     def on_gesture(self, gesture: str, stability: float, confidence: float) -> None:
         """Called from MainWindow on CameraWorker.gesture_detected signal."""
+        prev_gesture = self.last_gesture
         self.last_gesture = gesture
         self.gesture_stability = stability
         self.gesture_confidence = confidence
         if self.control_mode == ControlMode.GESTURE and gesture not in ("NONE", "—"):
             cmd = self.gesture_map.get(gesture, "—")
             self.last_command = cmd
-            self.add_log(gesture, cmd, "OK")
+            # BUG#5: only log when gesture changes to avoid flooding the log
+            if gesture != prev_gesture:
+                self.add_log(gesture, cmd, "OK")
 
     def on_manual_command(self, command: str) -> None:
         """Called when a manual control button is pressed."""

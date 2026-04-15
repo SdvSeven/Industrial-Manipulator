@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
@@ -13,7 +13,15 @@ class CameraView(QWidget):
 
     Call start() when the view becomes visible,
     call stop() when navigating away — releases the camera.
+
+    Signals
+    -------
+    worker_started(CameraWorker) — emitted after a new worker is created and
+                                   started, so external code can connect to its
+                                   signals without monkey-patching.
     """
+
+    worker_started = Signal(object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -40,15 +48,20 @@ class CameraView(QWidget):
         self._worker = CameraWorker(self)
         self._worker.frame_ready.connect(self._on_frame)
         self._worker.start()
+        self.worker_started.emit(self._worker)
 
     def stop(self) -> None:
-        """Stop streaming and release the camera."""
+        """Stop streaming and release the camera (non-blocking).
+
+        The worker thread is asked to stop and scheduled for deletion once it
+        finishes — no UI-thread wait() that would freeze the interface.
+        """
         if self._worker is None:
             return
-        self._worker.stop()
-        self._worker.wait(3000)
-        self._worker.deleteLater()
+        w = self._worker
         self._worker = None
+        w.stop()
+        w.finished.connect(w.deleteLater)
         self._feed.setPixmap(QPixmap())
         self._feed.setText("Нет сигнала")
 

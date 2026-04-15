@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import re
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QFrame, QGroupBox,
-    QHBoxLayout, QLabel, QLineEdit, QPushButton,
+    QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
     QScrollArea, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget, QHeaderView,
 )
@@ -11,6 +13,9 @@ from PySide6.QtWidgets import (
 from services.app_state import AppState
 
 _GESTURE_ROWS = ["LEFT", "RIGHT", "UP", "DOWN", "FIST", "OPEN"]
+
+# Whitelist: only well-formed commands may reach the serial layer
+_VALID_CMD_RE = re.compile(r"^(MOVE_[XY] [+-]\d+|GRAB|RELEASE)$")
 
 
 class SettingsView(QWidget):
@@ -197,10 +202,22 @@ class SettingsView(QWidget):
     def _on_save(self) -> None:
         if self._state is None:
             return
+        invalid: list[str] = []
         for row, gesture in enumerate(_GESTURE_ROWS):
             cmd = self._gesture_table.item(row, 1).text().strip()
-            if cmd:
-                self._state.gesture_map[gesture] = cmd
+            if not cmd or cmd == "—":
+                continue
+            if not _VALID_CMD_RE.match(cmd):
+                invalid.append(f"{gesture}: {cmd!r}")
+                continue
+            self._state.gesture_map[gesture] = cmd
+        if invalid:
+            QMessageBox.warning(
+                self, "Недопустимые команды",
+                "Следующие команды не прошли проверку и не сохранены:\n"
+                + "\n".join(invalid)
+                + "\n\nДопустимый формат: MOVE_X ±N, MOVE_Y ±N, GRAB, RELEASE",
+            )
 
     def _on_reset(self) -> None:
         from services.app_state import _DEFAULT_GESTURE_MAP
