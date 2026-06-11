@@ -26,6 +26,12 @@
 
 ---
 
+## Модули и Комплектующие
+
+<p align="center">
+  <img src="media/photo4.png" alt="Logo" width="1000"/>
+</p>
+
 ## Сборка Манипулятора
 
 <p align="center">
