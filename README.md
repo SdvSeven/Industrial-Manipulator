@@ -1,4 +1,4 @@
-# Индустриальный манипулятор
+# ИНДУСТРИАЛЬНЫЙ МАНИПУЛЯТОР v.0.0.1
 
 <p align="center">
   <img src="media/photo1.png" alt="Logo" width="1000"/>
