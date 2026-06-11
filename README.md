@@ -1,11 +1,7 @@
 # Индустриальный манипулятор
 
 <p align="center">
-  <img src="media/ГОТОВОЕ УСТРОЙСТВО.png" alt="Logo" width="800"/>
-</p>
-
-<p align="center">
-  Прототип системы управления манипулятором с помощью компьютерного зрения на вредном производстве
+  <img src="media/main.png" alt="Logo" width="1000"/>
 </p>
 
 <p align="center">
@@ -15,6 +11,10 @@
   <img src="https://img.shields.io/badge/mediapipe-✓-orange"/>
   <img src="https://img.shields.io/badge/OpenCV-✓-orange"/>
   <img src="https://img.shields.io/badge/PyQt6-✓-orange"/>
+</p>
+
+<p align="center">
+  Прототип системы управления манипулятором с помощью компьютерного зрения
 </p>
 
 ---
