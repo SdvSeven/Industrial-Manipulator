@@ -1,18 +1,20 @@
 # Индустриальный манипулятор
 
 <p align="center">
-  <img src="media/logo.png" alt="Logo" width="180"/>
+  <img src="media/ГОТОВОЕ УСТРОЙСТВО.png" alt="Logo" width="800"/>
 </p>
 
 <p align="center">
-  Система управления манипулятором с помощью компьютерного зрения на вредном производстве
+  Прототип системы управления манипулятором с помощью компьютерного зрения на вредном производстве
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/статус-в%20разработке-yellow"/>
+  <img src="https://img.shields.io/badge/статус-В%20демоверсии-green"/>
   <img src="https://img.shields.io/badge/с-01.10.2025-blue"/>
   <img src="https://img.shields.io/badge/python-3.10%2B-green"/>
   <img src="https://img.shields.io/badge/mediapipe-✓-orange"/>
+  <img src="https://img.shields.io/badge/OpenCV-✓-orange"/>
+  <img src="https://img.shields.io/badge/PyQt6-✓-orange"/>
 </p>
 
 ---
